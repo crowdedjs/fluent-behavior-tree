@@ -1,0 +1,7 @@
+src
+dist
+test
+index.html
+.travis.yml
+tsconfig.json
+tslint.json
