@@ -23,14 +23,6 @@ var Errors;
 })(Errors || (Errors = {}));
 var Errors$1 = Errors;
 
-var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 /**
  * A behavior tree leaf node for running an action
  *
@@ -42,25 +34,15 @@ class ActionNode {
         this.name = name;
         this.fn = fn;
     }
-    tick(state) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const result = yield this.fn(state);
-            if (!result) {
-                throw new BehaviorTreeError(Errors$1.NO_RETURN_VALUE);
-            }
-            return result;
-        });
+    async tick(state) {
+        const result = await this.fn(state);
+        if (!result) {
+            throw new BehaviorTreeError(Errors$1.NO_RETURN_VALUE);
+        }
+        return result;
     }
 }
 
-var __awaiter$1 = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 /**
  * Decorator node that inverts the success/failure of its child.
  *
@@ -70,20 +52,18 @@ class InverterNode {
     constructor(name) {
         this.name = name;
     }
-    tick(state) {
-        return __awaiter$1(this, void 0, void 0, function* () {
-            if (!this.childNode) {
-                throw new BehaviorTreeError(Errors$1.INVERTER_NO_CHILDREN);
-            }
-            const result = yield this.childNode.tick(state);
-            if (result === BehaviorTreeStatus$1.Failure) {
-                return BehaviorTreeStatus$1.Success;
-            }
-            else if (result === BehaviorTreeStatus$1.Success) {
-                return BehaviorTreeStatus$1.Failure;
-            }
-            return result;
-        });
+    async tick(state) {
+        if (!this.childNode) {
+            throw new BehaviorTreeError(Errors$1.INVERTER_NO_CHILDREN);
+        }
+        const result = await this.childNode.tick(state);
+        if (result === BehaviorTreeStatus$1.Failure) {
+            return BehaviorTreeStatus$1.Success;
+        }
+        else if (result === BehaviorTreeStatus$1.Success) {
+            return BehaviorTreeStatus$1.Failure;
+        }
+        return result;
     }
     addChild(child) {
         if (!!this.childNode) {
@@ -93,14 +73,6 @@ class InverterNode {
     }
 }
 
-var __awaiter$2 = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 /**
  * Runs child's nodes in parallel.
  *
@@ -120,32 +92,28 @@ class ParallelNode {
          */
         this.children = [];
     }
-    tick(state) {
-        return __awaiter$2(this, void 0, void 0, function* () {
-            const statuses = yield Promise.all(this.children.map((c) => this.tickChildren(state, c)));
-            const succeeded = statuses.filter((x) => x === BehaviorTreeStatus$1.Success).length;
-            const failed = statuses.filter((x) => x === BehaviorTreeStatus$1.Failure).length;
-            if (this.requiredToSucceed > 0 && succeeded >= this.requiredToSucceed) {
-                return BehaviorTreeStatus$1.Success;
-            }
-            if (this.requiredToFail > 0 && failed >= this.requiredToFail) {
-                return BehaviorTreeStatus$1.Failure;
-            }
-            return BehaviorTreeStatus$1.Running;
-        });
+    async tick(state) {
+        const statuses = await Promise.all(this.children.map((c) => this.tickChildren(state, c)));
+        const succeeded = statuses.filter((x) => x === BehaviorTreeStatus$1.Success).length;
+        const failed = statuses.filter((x) => x === BehaviorTreeStatus$1.Failure).length;
+        if (this.requiredToSucceed > 0 && succeeded >= this.requiredToSucceed) {
+            return BehaviorTreeStatus$1.Success;
+        }
+        if (this.requiredToFail > 0 && failed >= this.requiredToFail) {
+            return BehaviorTreeStatus$1.Failure;
+        }
+        return BehaviorTreeStatus$1.Running;
     }
     addChild(child) {
         this.children.push(child);
     }
-    tickChildren(state, child) {
-        return __awaiter$2(this, void 0, void 0, function* () {
-            try {
-                return yield child.tick(state);
-            }
-            catch (e) {
-                return BehaviorTreeStatus$1.Failure;
-            }
-        });
+    async tickChildren(state, child) {
+        try {
+            return await child.tick(state);
+        }
+        catch (e) {
+            return BehaviorTreeStatus$1.Failure;
+        }
     }
 }
 
@@ -188,14 +156,6 @@ class NodeEnumerator {
     }
 }
 
-var __awaiter$3 = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 /**
  * Selects the first node that succeeds. Tries successive nodes until it finds one that doesn't fail.
  *
@@ -215,40 +175,30 @@ class SelectorNode {
     init() {
         this.enumerator = new NodeEnumerator(this.children);
     }
-    tick(state) {
-        return __awaiter$3(this, void 0, void 0, function* () {
-            if (!this.enumerator || !this.keepState) {
-                this.init();
-            }
-            if (!this.enumerator.current) {
-                return BehaviorTreeStatus$1.Running;
-            }
-            do {
-                const status = yield this.enumerator.current.tick(state);
-                if (status !== BehaviorTreeStatus$1.Failure) {
-                    if (status === BehaviorTreeStatus$1.Success) {
-                        this.enumerator.reset();
-                    }
-                    return status;
+    async tick(state) {
+        if (!this.enumerator || !this.keepState) {
+            this.init();
+        }
+        if (!this.enumerator.current) {
+            return BehaviorTreeStatus$1.Running;
+        }
+        do {
+            const status = await this.enumerator.current.tick(state);
+            if (status !== BehaviorTreeStatus$1.Failure) {
+                if (status === BehaviorTreeStatus$1.Success) {
+                    this.enumerator.reset();
                 }
-            } while (this.enumerator.next());
-            this.enumerator.reset();
-            return BehaviorTreeStatus$1.Failure;
-        });
+                return status;
+            }
+        } while (this.enumerator.next());
+        this.enumerator.reset();
+        return BehaviorTreeStatus$1.Failure;
     }
     addChild(child) {
         this.children.push(child);
     }
 }
 
-var __awaiter$4 = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 /**
  * Runs child nodes in sequence, until one fails.
  *
@@ -268,40 +218,30 @@ class RepeatNode {
     init() {
         this.enumerator = new NodeEnumerator(this.children);
     }
-    tick(state) {
-        return __awaiter$4(this, void 0, void 0, function* () {
-            if (!this.enumerator || !this.keepState) {
-                this.init();
-            }
-            if (!this.enumerator.current) {
+    async tick(state) {
+        if (!this.enumerator || !this.keepState) {
+            this.init();
+        }
+        if (!this.enumerator.current) {
+            return BehaviorTreeStatus$1.Running;
+        }
+        do {
+            const status = await this.enumerator.current.tick(state);
+            if (status !== BehaviorTreeStatus$1.Success) {
+                if (status === BehaviorTreeStatus$1.Failure) {
+                    this.enumerator.reset();
+                }
                 return BehaviorTreeStatus$1.Running;
             }
-            do {
-                const status = yield this.enumerator.current.tick(state);
-                if (status !== BehaviorTreeStatus$1.Success) {
-                    if (status === BehaviorTreeStatus$1.Failure) {
-                        this.enumerator.reset();
-                    }
-                    return BehaviorTreeStatus$1.Running;
-                }
-            } while (this.enumerator.next());
-            this.enumerator.reset();
-            return BehaviorTreeStatus$1.Running;
-        });
+        } while (this.enumerator.next());
+        this.enumerator.reset();
+        return BehaviorTreeStatus$1.Running;
     }
     addChild(child) {
         this.children.push(child);
     }
 }
 
-var __awaiter$5 = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 /**
  * Runs child nodes in sequence, until one fails.
  *
@@ -321,40 +261,30 @@ class UntilFailNode {
     init() {
         this.enumerator = new NodeEnumerator(this.children);
     }
-    tick(state) {
-        return __awaiter$5(this, void 0, void 0, function* () {
-            if (!this.enumerator || !this.keepState) {
-                this.init();
-            }
-            if (!this.enumerator.current) {
-                return BehaviorTreeStatus$1.Running;
-            }
-            do {
-                const status = yield this.enumerator.current.tick(state);
-                if (status !== BehaviorTreeStatus$1.Success) {
-                    if (status === BehaviorTreeStatus$1.Failure) {
-                        this.enumerator.reset();
-                    }
-                    return status;
-                }
-            } while (this.enumerator.next());
-            this.enumerator.reset();
+    async tick(state) {
+        if (!this.enumerator || !this.keepState) {
+            this.init();
+        }
+        if (!this.enumerator.current) {
             return BehaviorTreeStatus$1.Running;
-        });
+        }
+        do {
+            const status = await this.enumerator.current.tick(state);
+            if (status !== BehaviorTreeStatus$1.Success) {
+                if (status === BehaviorTreeStatus$1.Failure) {
+                    this.enumerator.reset();
+                }
+                return status;
+            }
+        } while (this.enumerator.next());
+        this.enumerator.reset();
+        return BehaviorTreeStatus$1.Running;
     }
     addChild(child) {
         this.children.push(child);
     }
 }
 
-var __awaiter$6 = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 /**
  * Runs child nodes in sequence, until one fails.
  *
@@ -374,26 +304,24 @@ class SequenceNode {
     init() {
         this.enumerator = new NodeEnumerator(this.children);
     }
-    tick(state) {
-        return __awaiter$6(this, void 0, void 0, function* () {
-            if (!this.enumerator || !this.keepState) {
-                this.init();
-            }
-            if (!this.enumerator.current) {
-                return BehaviorTreeStatus$1.Running;
-            }
-            do {
-                const status = yield this.enumerator.current.tick(state);
-                if (status !== BehaviorTreeStatus$1.Success) {
-                    if (status === BehaviorTreeStatus$1.Failure) {
-                        this.enumerator.reset();
-                    }
-                    return status;
+    async tick(state) {
+        if (!this.enumerator || !this.keepState) {
+            this.init();
+        }
+        if (!this.enumerator.current) {
+            return BehaviorTreeStatus$1.Running;
+        }
+        do {
+            const status = await this.enumerator.current.tick(state);
+            if (status !== BehaviorTreeStatus$1.Success) {
+                if (status === BehaviorTreeStatus$1.Failure) {
+                    this.enumerator.reset();
                 }
-            } while (this.enumerator.next());
-            this.enumerator.reset();
-            return BehaviorTreeStatus$1.Success;
-        });
+                return status;
+            }
+        } while (this.enumerator.next());
+        this.enumerator.reset();
+        return BehaviorTreeStatus$1.Success;
     }
     addChild(child) {
         this.children.push(child);
@@ -440,14 +368,6 @@ class Stack {
     }
 }
 
-var __awaiter$7 = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 class BehaviorTreeBuilder {
     constructor() {
         /**
@@ -480,7 +400,7 @@ class BehaviorTreeBuilder {
      * @returns {BehaviorTreeBuilder}
      */
     condition(name, fn) {
-        return this.do(name, (t) => __awaiter$7(this, void 0, void 0, function* () { return (yield fn(t)) ? BehaviorTreeStatus$1.Success : BehaviorTreeStatus$1.Failure; }));
+        return this.do(name, async (t) => await fn(t) ? BehaviorTreeStatus$1.Success : BehaviorTreeStatus$1.Failure);
     }
     /**
      * Create an inverter node that inverts the success/failure of its children.

@@ -1,6 +1,6 @@
 {
     "name": "@crowdedjs/fluent-behavior-tree",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Behavior tree library with a fluent API, compiled for the browser",
     "main": "./index.js",
     "types": "dist/index.d.ts",
